@@ -13,13 +13,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  
-*/
+*/ 
 //-CRE-
 
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Glass.Mapper.Sc.Configuration;
@@ -46,9 +47,8 @@ namespace Glass.Mapper.Sc.DataMappers
 
         private const string _richTextKey = "rich text";
 
-
-        private static ConcurrentDictionary<Guid, bool> isRichTextDictionary = new ConcurrentDictionary<Guid, bool>();
-
+        private static ImmutableDictionary<Guid, bool> isRichTextDictionary = ImmutableDictionary<Guid, bool>.Empty;
+         
         /// <summary>
         /// Gets the field.
         /// </summary>
@@ -81,7 +81,7 @@ namespace Glass.Mapper.Sc.DataMappers
 
             // we don't know - it might still be rich text
             bool isRichText = field.TypeKey == _richTextKey;
-            isRichTextDictionary.TryAdd(fieldGuid, isRichText);
+            isRichTextDictionary = isRichTextDictionary.Add(fieldGuid, isRichText);
 
             // now we know it isn't rich text - return the raw result.
             return GetResult(field, isRichText);

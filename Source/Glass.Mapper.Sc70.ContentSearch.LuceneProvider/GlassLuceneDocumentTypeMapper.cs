@@ -44,7 +44,7 @@ namespace Glass.Mapper.Sc.ContentSearch.LuceneProvider
 
                 //TODO: use ID.Parse on document.Get("_id") ?
                 Guid id;
-                if (Guid.TryParse(document.Get("_group"), out id)) SetupProxy(id, document.GetFields().Select(x => x.Name.ToLower()), (object)instance as IProxyTargetAccessor);
+                if (Guid.TryParse(document.Get("_group"), out id)) SetupProxy(id, (object)instance as IProxyTargetAccessor);
 
                 ReadDocumentFields(document, documentFieldNames, typeMap, virtualFieldProcessors, instance);
 
@@ -65,14 +65,13 @@ namespace Glass.Mapper.Sc.ContentSearch.LuceneProvider
             using (new SearchSwitcher()) return (T)_sitecoreContext.InstantiateObject(typeCreationContext);
         }
 
-        protected void SetupProxy(Guid id, IEnumerable<string> fieldNames, IProxyTargetAccessor target)
+        protected void SetupProxy(Guid id, IProxyTargetAccessor target)
         {
             var searchInterceptor = target.GetInterceptors().FirstOrDefault(x => x is SearchInterceptor) as SearchInterceptor;
             if (searchInterceptor == null) return;
 
             searchInterceptor.Id = new ID(id);
-            searchInterceptor.TypeConfiguration = _sitecoreContext.GlassContext.GetTypeConfiguration <SitecoreTypeConfiguration>(target);
-            searchInterceptor.IndexFields = fieldNames;
+            searchInterceptor.TypeConfiguration = _sitecoreContext.GlassContext.GetTypeConfiguration<SitecoreTypeConfiguration>(target);
         }
     }
 }

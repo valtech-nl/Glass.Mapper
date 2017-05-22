@@ -24,6 +24,7 @@ using Glass.Mapper.Configuration;
 using Glass.Mapper.Pipelines.ConfigurationResolver.Tasks.OnDemandResolver;
 using Glass.Mapper.Pipelines.DataMapperResolver;
 using System.Collections.Concurrent;
+using Castle.DynamicProxy.Internal;
 using Glass.Mapper.IoC;
 
 namespace Glass.Mapper
@@ -158,47 +159,70 @@ namespace Glass.Mapper
         /// <param name="loaders">The list of configuration loaders to load into the context.</param>
         public void Load(params IConfigurationLoader[] loaders)
         {
-            if (loaders.Any())
-            {
-                var typeConfigurations = loaders
-                    .Select(loader => loader.Load()).Aggregate((x, y) => x.Union(y));
+	        if (!loaders.Any())
+	        {
+		        return;
+	        }
 
-                //first we have to add each type config to the collection
-                foreach (var typeConfig in typeConfigurations)
-                {
+			var typeConfigurations = loaders
+		        .Select(loader => loader.Load()).Aggregate((x, y) => x.Union(y));
 
-                    //don't load generic types or specifically the object type
-                    //see https://github.com/mikeedwards83/Glass.Mapper/issues/85
-                    if (typeConfig.Type.IsGenericTypeDefinition || typeConfig.Type == typeof(System.Object))
-                    {
-                        continue;
-                    }
+	        //first we have to add each type config to the collection
+	        foreach (var typeConfig in typeConfigurations)
+	        {
+		        //don't load generic types or specifically the object type
+		        //see https://github.com/mikeedwards83/Glass.Mapper/issues/85
+		        if (typeConfig.Type.IsGenericTypeDefinition || typeConfig.Type == typeof(System.Object))
+		        {
+			        continue;
+		        }
 
 
-                    if (TypeConfigurations.ContainsKey(typeConfig.Type)){
-                        Log.Warn("Tried to add type {0} to TypeConfigurationDictioary twice".Formatted(typeConfig.Type));
-                        continue;
-                    }
-                    
-                    typeConfig.PerformAutoMap();
+		        if (TypeConfigurations.ContainsKey(typeConfig.Type))
+		        {
+			        Log.Warn("Tried to add type {0} to TypeConfigurationDictioary twice".Formatted(typeConfig.Type));
+			        continue;
+		        }
 
-                    ProcessProperties(typeConfig.Properties);
+		        typeConfig.PerformAutoMap();
 
-                    if (!TypeConfigurations.TryAdd(typeConfig.Type, typeConfig))
-                    {
-                        Log.Warn("Failed to add type {0} to TypeConfigurationDictionary".Formatted(typeConfig.Type)); 
-                    }
-                }
-            }
-        }
+				if (!Config.AutoImportBaseClasses) //if we have to import baseclasses... wait for it
+					ProcessProperties(typeConfig.Properties);
 
-        /// <summary>
-        /// Processes the properties.
-        /// </summary>
-        /// <param name="properties">The properties.</param>
-        /// <exception cref="System.NullReferenceException">Could not find data mapper for property {0} on type {1}
-        ///                         .Formatted(property.PropertyInfo.Name,property.PropertyInfo.ReflectedType.FullName)</exception>
-        private void ProcessProperties(IEnumerable<AbstractPropertyConfiguration> properties )
+				if (!TypeConfigurations.TryAdd(typeConfig.Type, typeConfig))
+		        {
+			        Log.Warn("Failed to add type {0} to TypeConfigurationDictionary".Formatted(typeConfig.Type));
+		        }
+	        }
+
+	        if (Config.AutoImportBaseClasses)
+	        {
+		        foreach (var typeconfig in TypeConfigurations)//go through all typeconfigs, one can be changed now
+		        {
+			        var type = typeconfig.Key;
+					var baseTypes = type.GetBaseClassesAndInterfaces();
+			        foreach (var baseType in baseTypes)
+			        {
+				        AbstractTypeConfiguration config;
+				        if (TypeConfigurations.TryGetValue(baseType, out config))
+				        {
+					        typeconfig.Value.Import(config);
+				        }
+			        }
+		        }
+				foreach (var typeConfig in TypeConfigurations.Values)
+					ProcessProperties(typeConfig.Properties);
+			}
+
+		}
+
+		/// <summary>
+		/// Processes the properties.
+		/// </summary>
+		/// <param name="properties">The properties.</param>
+		/// <exception cref="System.NullReferenceException">Could not find data mapper for property {0} on type {1}
+		///                         .Formatted(property.PropertyInfo.Name,property.PropertyInfo.ReflectedType.FullName)</exception>
+		private void ProcessProperties(IEnumerable<AbstractPropertyConfiguration> properties )
         {
             DataMapperResolver runner = new DataMapperResolver(DependencyResolver.DataMapperResolverFactory.GetItems());
 

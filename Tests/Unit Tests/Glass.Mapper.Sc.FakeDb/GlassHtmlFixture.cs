@@ -220,7 +220,7 @@ namespace Glass.Mapper.Sc.FakeDb
                         Type =  "image"
                     }
                 },
-                new Sitecore.FakeDb.DbItem("Target",new ID(), templateId)
+                new Sitecore.FakeDb.DbItem("Target",ID.NewID, templateId)
                 {
                     {"Image", ""}
                 },
@@ -312,7 +312,7 @@ namespace Glass.Mapper.Sc.FakeDb
                         Type =  "image"
                     }
                 },
-                new Sitecore.FakeDb.DbItem("Target",new ID(), templateId)
+                new Sitecore.FakeDb.DbItem("Target",ID.NewID, templateId)
                 {
                     {"Image", ""}
                 },
@@ -401,7 +401,7 @@ namespace Glass.Mapper.Sc.FakeDb
                         Type = "image"
                     }
                 },
-                new Sitecore.FakeDb.DbItem("Target", new ID(), templateId)
+                new Sitecore.FakeDb.DbItem("Target", ID.NewID, templateId)
                 {
                     {"Image", ""}
                 },

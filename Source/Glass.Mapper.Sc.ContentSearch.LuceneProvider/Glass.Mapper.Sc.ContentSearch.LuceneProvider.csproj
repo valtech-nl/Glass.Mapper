@@ -26,21 +26,28 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
+    <DocumentationFile>bin\Release\Glass.Mapper.Sc.ContentSearch.LuceneProvider.XML</DocumentationFile>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <!--Start: Must come after all PropertyGroups -->
   <Import Project="..\..\Configuration.proj" />
+  <PropertyGroup>
+    <ScDir Condition="'$(ScDir)' =='..\..\Depends\Sitecore\bin70\'">..\..\Depends\Sitecore\bin72\</ScDir>
+    <ScDir Condition="'$(ScDir)' =='..\..\Depends\Sitecore\bin71\'">..\..\Depends\Sitecore\bin72\</ScDir>
+  </PropertyGroup>
   <!--End: Must come after all PropertyGroups -->
   <ItemGroup>
     <Reference Include="Castle.Core">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath Condition="'$(TargetFrameworkVersion)' == 'v4.0'">..\..\packages\Castle.Core.3.3.3\lib\net40-client\Castle.Core.dll</HintPath>
-      <HintPath Condition="'$(TargetFrameworkVersion)' == 'v4.5'">..\..\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll</HintPath>
+      <HintPath>..\..\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll</HintPath>
     </Reference>
     <Reference Include="Lucene.Net">
       <HintPath>$(ScDir)Lucene.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="Sitecore.ContentSearch.Linq.Lucene">
+      <HintPath>$(ScDir)Sitecore.ContentSearch.Linq.Lucene.dll</HintPath>
     </Reference>
     <Reference Include="Sitecore.ContentSearch, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -66,7 +73,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GlassLuceneDocumentTypeMapper.cs" />
+    <Compile Include="GlassDocumentMapperObjectFactory.cs" />
     <Compile Include="GlassLuceneFieldNameTranslator.cs" />
     <Compile Include="GlassLuceneIndex.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -86,9 +93,17 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Config\Include\Glass\Glass.Mapper.Sc.ContentSearch.Lucene.Config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+  </Target>
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <Target Name="BeforeBuild">
     <Message Importance="high" Text="ScVersion: $(ScVersion)" />

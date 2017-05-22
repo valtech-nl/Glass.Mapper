@@ -1,8 +1,11 @@
 ﻿#region GlassMapperScCustom generated code
+using System.Linq;
 using Glass.Mapper.Configuration;
 using Glass.Mapper.IoC;
 using Glass.Mapper.Maps;
+using Glass.Mapper.Sc.CodeFirst;
 using Glass.Mapper.Sc.IoC;
+using Sitecore.SecurityModel;
 using IDependencyResolver = Glass.Mapper.Sc.IoC.IDependencyResolver;
 
 namespace $rootnamespace$.App_Start
@@ -28,9 +31,10 @@ namespace $rootnamespace$.App_Start
 			return new IConfigurationLoader[]{};
 		}
 		public static void PostLoad(){
-			//Remove the comments to activate CodeFist
-			/* CODE FIRST START
-            var dbs = Sitecore.Configuration.Factory.GetDatabases();
+			//Set config property to true in Glass.Mapper.Sc.CodeFirst.config to enable codefirst
+			if (!global::Sitecore.Configuration.Settings.GetBoolSetting("Glass.CodeFirst", false)) return;
+
+            var dbs = global::Sitecore.Configuration.Factory.GetDatabases();
             foreach (var db in dbs)
             {
                 var provider = db.GetDataProviders().FirstOrDefault(x => x is GlassDataProvider) as GlassDataProvider;
@@ -42,8 +46,6 @@ namespace $rootnamespace$.App_Start
                     }
                 }
             }
-             * CODE FIRST END
-             */
 		}
 		public static void AddMaps(IConfigFactory<IGlassMap> mapsConfigFactory)
         {

@@ -87,7 +87,7 @@ namespace Glass.Mapper.Configuration
         /// Adds the property.
         /// </summary>
         /// <param name="property">The property.</param>
-        public virtual void AddProperty(AbstractPropertyConfiguration property)
+        public virtual void AddProperty(AbstractPropertyConfiguration property, bool overWrite = true)
         {
             if (property != null)
             {
@@ -95,6 +95,9 @@ namespace Glass.Mapper.Configuration
                 var currentProperty = _properties.FirstOrDefault(x => x.PropertyInfo.Name == property.PropertyInfo.Name);
                 if (currentProperty != null)
                 {
+                    if (!overWrite)
+                        return;
+
                     _properties.Remove(currentProperty);
                 }
 
@@ -178,17 +181,7 @@ namespace Glass.Mapper.Configuration
         /// <returns></returns>
         public virtual IEnumerable<AbstractPropertyConfiguration> AutoMapProperties(Type type)
         {
-            BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance |
-                                    BindingFlags.FlattenHierarchy;
-            IEnumerable<PropertyInfo> properties = type.GetProperties(flags);
-
-            if (type.IsInterface)
-            {
-                foreach (var inter in type.GetInterfaces())
-                {
-                    properties = properties.Union(inter.GetProperties(flags));
-                }
-            }
+            IEnumerable<PropertyInfo> properties = Utilities.GetAllProperties(type);
 
             var propList = new List<AbstractPropertyConfiguration>();
 
@@ -197,7 +190,7 @@ namespace Glass.Mapper.Configuration
                 if (Properties.All(x => x.PropertyInfo != property))
                 {
                     //skipped already mapped properties
-                    if(_properties.Any(x=>x.PropertyInfo.Name == property.Name))
+                    if(_properties.Any(x=>x.PropertyInfo.Name == property.Name) || propList.Any(x => x.PropertyInfo.Name == property.Name))
                         continue;
 
                       //skip properties that are actually indexers
@@ -222,12 +215,20 @@ namespace Glass.Mapper.Configuration
             return propList;
         }
 
-        /// <summary>
-        /// Called to map each property automatically
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        protected virtual AbstractPropertyConfiguration AutoMapProperty(PropertyInfo property)
+		public void Import(AbstractTypeConfiguration typeConfig)
+		{
+			typeConfig.Properties
+				.Where(x => this.Properties.All(y => y.PropertyInfo.Name != x.PropertyInfo.Name))
+				.ForEach(x => this.AddProperty(x, false));
+		}
+
+
+		/// <summary>
+		/// Called to map each property automatically
+		/// </summary>
+		/// <param name="property"></param>
+		/// <returns></returns>
+		protected virtual AbstractPropertyConfiguration AutoMapProperty(PropertyInfo property)
         {
             return null;
         }

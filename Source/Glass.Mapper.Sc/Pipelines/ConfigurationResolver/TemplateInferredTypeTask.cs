@@ -13,15 +13,17 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  
-*/ 
+*/
 //-CRE-
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using Glass.Mapper.Pipelines.ConfigurationResolver;
 using Glass.Mapper.Sc.Configuration;
 using Sitecore.Data;
+using Sitecore.Data.Items;
 
 namespace Glass.Mapper.Sc.Pipelines.ConfigurationResolver
 {
@@ -60,12 +62,13 @@ namespace Glass.Mapper.Sc.Pipelines.ConfigurationResolver
                 }
                 else
                 {
-                    var configs = args.Context.TypeConfigurations.Select(x => x.Value as SitecoreTypeConfiguration);
 
-                    var types = configs.Where(x => x.TemplateId == templateId);
-                    if (types.Any())
+                    var configs = args.Context.TypeConfigurations.Select(x => x.Value as SitecoreTypeConfiguration);
+                    var bestType = FindBestType(scContext.SitecoreService.Database.Templates[templateId], configs,
+                        requestedType);
+                    if (bestType != null)
                     {
-                        args.Result = types.FirstOrDefault(x => requestedType.IsAssignableFrom(x.Type));
+                        args.Result = bestType;
                         if (!_inferredCache.TryAdd(key, args.Result as SitecoreTypeConfiguration))
                         {
                             //TODO: some logging
@@ -73,8 +76,27 @@ namespace Glass.Mapper.Sc.Pipelines.ConfigurationResolver
                     }
                 }
             }
-
             base.Execute(args);
+        }
+
+        private SitecoreTypeConfiguration FindBestType(TemplateItem templateItem, IEnumerable<SitecoreTypeConfiguration> configs, Type requestedType)
+        {
+            if (templateItem == null)
+                return null;
+            var types = configs.Where(x => x.TemplateId == templateItem.ID);
+            if (types.Any())
+            {
+                var result = types.FirstOrDefault(x => requestedType.IsAssignableFrom(x.Type));
+                if (result != null)
+                    return result;
+            }
+            foreach (var btmpl in templateItem.BaseTemplates)
+            {
+                var result = FindBestType(btmpl, configs, requestedType);
+                if (result != null)
+                    return result;
+            }
+            return null;
         }
 
     }

@@ -404,7 +404,7 @@ namespace Glass.Mapper.Sc
 
 
         /// <summary>
-        /// Checks it and attribute is part of the NameValueCollection and updates it with the
+        /// Checks if an attribute is part of the NameValueCollection and updates it with the
         /// default if it isn't.
         /// </summary>
         /// <param name="collection">The collection of parameters</param>
@@ -416,6 +416,18 @@ namespace Glass.Mapper.Sc
                 collection[name] = defaultValue;
         }
 
+        /// <summary>
+        /// Checks if an attribute is part of the NameValueCollection and updates it with the
+        /// default if it isn't.
+        /// </summary>
+        /// <param name="collection">The collection of parameters</param>
+        /// <param name="name">The name of the attribute in the collection</param>
+        /// <param name="defaultValue">The default value for the attribute</param>
+        public static void AttributeCheck(NameValueCollection collection, string name, string defaultValue)
+        {
+            if (collection[name].IsNullOrEmpty() && !defaultValue.IsNullOrEmpty())
+                collection[name] = defaultValue;
+        }
 
 
         /// <summary>
@@ -442,6 +454,7 @@ namespace Glass.Mapper.Sc
 
             var sb = new StringBuilder();
             var writer = new StringWriter(sb);
+            var linkField = field.Compile().Invoke(model) as Fields.Link;
 
             RenderingResult result;
             if (IsInEditingMode && isEditable)
@@ -451,6 +464,12 @@ namespace Glass.Mapper.Sc
                 {
                     attrs.Add("haschildren", "true");
                     attrs.Add("text",contents);
+                }
+
+                if (linkField != null)
+                {
+                    AttributeCheck(attrs, "class", linkField.Class);
+                    AttributeCheck(attrs, "title", linkField.Title);
                 }
 
                 result = MakeEditable(
